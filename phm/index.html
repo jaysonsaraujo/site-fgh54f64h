@@ -578,7 +578,7 @@
         // Configuração do Baserow
         const BASEROW_API_URL = 'https://br.botmagic.com.br'; // Substitua pela URL da sua API Baserow
         const BASEROW_TOKEN = '0pcxIq0CrPUdtzXs1ONVQ0EjzW6QsTKX'; // Substitua pelo seu token
-        const TABLE_ID = '224'; // Substitua pelo ID da sua tabela
+        const TABLE_ID = '871'; // Substitua pelo ID da sua tabela
 
         // Dados mockados de exemplo - substituir pela integração real com Baserow
         let reservedDates = {};
@@ -735,6 +735,228 @@
             document.getElementById('cadastroForm').addEventListener('submit', handleSubmit);
 
             // Duplo clique para adicionar novo local
+            document.getElementById('localCasamento').addEventListener('dblclick', function() {
+                const novoLocal = prompt('Digite o nome do novo local:');
+                if (novoLocal && novoLocal.trim()) {
+                    const localUpper = novoLocal.toUpperCase().trim();
+                    if (!locaisDisponiveis.includes(localUpper)) {
+                        locaisDisponiveis.push(localUpper);
+                        updateDataLists();
+                        this.value = localUpper;
+                    }
+                }
+            });
+
+            // Duplo clique para adicionar novo padre/diácono
+            document.getElementById('nomePadre').addEventListener('dblclick', function() {
+                const novoPadre = prompt('Digite o nome do novo Padre/Diácono:');
+                if (novoPadre && novoPadre.trim()) {
+                    const padreUpper = novoPadre.toUpperCase().trim();
+                    if (!padresDisponiveis.includes(padreUpper)) {
+                        padresDisponiveis.push(padreUpper);
+                        updateDataLists();
+                        this.value = padreUpper;
+                    }
+                }
+            });
+
+            // Converter todos os inputs para maiúsculas
+            const inputs = document.querySelectorAll('input[type="text"], input[type="tel"], textarea');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    if (!this.readOnly) {
+                        this.value = this.value.toUpperCase();
+                    }
+                });
+            });
+
+            // Máscara para telefone
+            document.getElementById('whatsappNoiva').addEventListener('input', formatPhone);
+            document.getElementById('whatsappNoivo').addEventListener('input', formatPhone);
+
+            // Fechar modal ao clicar fora
+            document.getElementById('cadastroModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        }
+
+        function formatPhone(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+            }
+            e.target.value = value;
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
             
-            </script>
+            // Validar campos obrigatórios
+            const requiredFields = [
+                'nomeNoiva', 'whatsappNoiva', 'nomeNoivo', 'whatsappNoivo',
+                'dataCasamento', 'horarioCasamento', 'localCasamento', 'nomePadre',
+                'dataEntrevista'
+            ];
             
+            for (let field of requiredFields) {
+                const element = document.getElementById(field);
+                if (!element.value.trim()) {
+                    alert(`Por favor, preencha o campo: ${element.previousElementSibling.textContent.replace(' *', '')}`);
+                    element.focus();
+                    return;
+                }
+            }
+
+            // Mostrar indicador de carregamento
+            showLoading();
+
+            // Coletar dados do formulário
+            const formData = {
+                id: document.getElementById('cadastroId').value,
+                dataAgendamento: document.getElementById('dataAgendamento').value,
+                nomeNoiva: document.getElementById('nomeNoiva').value,
+                whatsappNoiva: document.getElementById('whatsappNoiva').value,
+                nomeNoivo: document.getElementById('nomeNoivo').value,
+                whatsappNoivo: document.getElementById('whatsappNoivo').value,
+                dataCasamento: document.getElementById('dataCasamento').value,
+                horarioCasamento: document.getElementById('horarioCasamento').value,
+                localCasamento: document.getElementById('localCasamento').value,
+                nomePadre: document.getElementById('nomePadre').value,
+                transferencia: document.querySelector('input[name="transferencia"]:checked').value,
+                efeitoCivil: document.querySelector('input[name="efeitoCivil"]:checked').value,
+                dataEntrevista: document.getElementById('dataEntrevista').value,
+                proclame1: document.getElementById('proclame1').value,
+                proclame2: document.getElementById('proclame2').value,
+                proclame3: document.getElementById('proclame3').value,
+                proclame4: document.getElementById('proclame4').value,
+                observacoes: document.getElementById('observacoes').value,
+                mensagemSistema: document.getElementById('mensagemSistema').value
+            };
+
+            try {
+                // Aqui você faria a chamada real para o Baserow
+                // await saveToBaserow(formData);
+                
+                // Simulação de salvamento (remover quando integrar com Baserow real)
+                await simulateSave(formData);
+                
+                showSuccess();
+                
+                // Marcar data como reservada
+                reservedDates[formData.dataCasamento] = formData;
+                updateReservedDatesDisplay();
+                
+                // Fechar modal após 2 segundos
+                setTimeout(() => {
+                    closeModal();
+                    initializeCalendar();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                showError();
+            }
+        }
+
+        async function saveToBaserow(data) {
+            // Implementação real da integração com Baserow
+            const response = await fetch(`${BASEROW_API_URL}/api/database/rows/table/${TABLE_ID}/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${BASEROW_TOKEN}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao salvar no Baserow');
+            }
+
+            return response.json();
+        }
+
+        async function loadReservedDates() {
+            // Aqui você faria a chamada real para o Baserow para carregar datas reservadas
+            // const data = await loadFromBaserow();
+            
+            // Simulação de dados (remover quando integrar com Baserow real)
+            reservedDates = {
+                '2024-12-25': { nomeNoiva: 'MARIA SILVA', nomeNoivo: 'JOÃO SANTOS' },
+                '2024-12-31': { nomeNoiva: 'ANA COSTA', nomeNoivo: 'PEDRO OLIVEIRA' }
+            };
+            
+            updateReservedDatesDisplay();
+        }
+
+        async function loadFromBaserow() {
+            // Implementação real da integração com Baserow
+            const response = await fetch(`${BASEROW_API_URL}/api/database/rows/table/${TABLE_ID}/`, {
+                headers: {
+                    'Authorization': `Token ${BASEROW_TOKEN}`,
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao carregar dados do Baserow');
+            }
+
+            const data = await response.json();
+            const reserved = {};
+            
+            data.results.forEach(row => {
+                reserved[row.dataCasamento] = row;
+            });
+            
+            return reserved;
+        }
+
+        function updateReservedDatesDisplay() {
+            document.querySelectorAll('.day[data-date]').forEach(day => {
+                const date = day.dataset.date;
+                if (reservedDates[date]) {
+                    day.classList.add('reserved');
+                } else {
+                    day.classList.remove('reserved');
+                }
+            });
+        }
+
+        function simulateSave(data) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    console.log('Dados salvos:', data);
+                    resolve();
+                }, 1500);
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').classList.add('active');
+            hideMessages();
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').classList.remove('active');
+        }
+
+        function showSuccess() {
+            hideLoading();
+            document.getElementById('successMessage').classList.add('active');
+        }
+
+        function showError() {
+            hideLoading();
+            document.getElementById('errorMessage').classList.add('active');
+        }
+
+        function hideMessages() {
+            document.getElementById('successMessage').classList.remove('active');
+            document.getElementById('errorMessage').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
